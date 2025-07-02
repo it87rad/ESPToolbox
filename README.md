@@ -37,7 +37,8 @@ Connect to that AP and navigate to http://192.168.4.1
 ## Who do I talk to? ##
 
  * [Naguissa](https://github.com/Naguissa)
- * https://www.foroelectro.net
+ * English: https://www.foroelectro.net/english-f34/toolbox-arduino-sketch-for-esp8266-and-esp32-t542.html
+ * Spanish: https://www.foroelectro.net/electronica-digital-microcontroladores-f8/sketch-arduino-de-caja-de-herramientas-web-para-es-t541.html
 
 
 ## Contribute ##
