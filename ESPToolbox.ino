@@ -25,6 +25,9 @@ volatile int blinkPin = -1;
 volatile bool blinking = false;
 volatile bool blink_status = 0;
 
+String scanResults;
+volatile bool scanStart = false;
+volatile bool scanning = false;
 
 #ifdef ARDUINO_ARCH_ESP32
     #include <HTTPUpdateServer.h>
@@ -52,6 +55,9 @@ void handleSaveConfig();
 void handleBlink();
 void handleBlinkoff();
 void handleI2cscan();
+void handleWifiScan();
+void handleWifiScanResult();
+void handleWifiScanResult();
 
 void setup_web(void);
 void setup_wifi();
@@ -60,7 +66,7 @@ void setup_timer();
 void setup();
 void loop();
 void blink_timed_function();
-
+void doWifiScan();
 
 // ==================== Debug functionality ====================
 void uDebugLibInit() {
@@ -109,6 +115,57 @@ void handleBlinkoff() {
 }
 
 
+// ==================== WiFi scanner ====================
+void doWifiScan() {
+    scanResults.clear();
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+    delay(100);
+    int n = WiFi.scanNetworks();
+    if (n == 0) {
+        scanResults = "WiFi scanner: no networks found\n";
+    } else {
+        scanResults = String(n, 10) + " networks found:\n";
+        for (int i = 0; i < n; i++) {
+            scanResults += " - " + WiFi.SSID(i) + " - Channel: " + WiFi.channel(i) + " - RSSI: " + WiFi.RSSI(i) + " - Encription: ";
+            switch (WiFi.encryptionType(i)) {
+                case ENC_TYPE_WEP: scanResults += "WEP"; break;
+                case ENC_TYPE_TKIP: scanResults += "WPA/PSK"; break;
+                case ENC_TYPE_CCMP: scanResults += "WPA2/PSK"; break;
+                case ENC_TYPE_NONE: scanResults += "NONE"; break;
+                case ENC_TYPE_AUTO: scanResults += "AUTO (WPA/WPA2/PSK)"; break;
+                default: scanResults += "Unknown"; break;
+            }
+            yield();
+            scanResults += "\n";
+        }
+    }
+    setup_wifi();
+    setup_web();
+    scanning = false;
+}
+
+void handleWifiScanResult() {
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.send(200, "text", "");
+    yield();
+    if (scanning)  {
+        server.sendContent("...scanning WiFi...");
+    } else {
+        server.sendContent(scanResults);
+    }
+
+
+}
+
+void handleWifiScan() {
+    scanning = true;
+    scanStart = true;
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.send(200, "text", "");
+    yield();
+    server.sendContent("WiFi scan started, waiting for results\n");
+}
 
 // ==================== I2C scanner ====================
 
@@ -162,7 +219,6 @@ void handleI2cscan() {
 
 
 
-
 // ==================== ESP web and update ====================
 void handleDefault() {
     server.setContentLength(CONTENT_LENGTH_UNKNOWN);
@@ -170,7 +226,7 @@ void handleDefault() {
     yield();
     server.sendContent("<html><head><title>ESPToolbox</title>");
     yield();
-    server.sendContent("<script>function get(uri) {var xhr=new XMLHttpRequest();xhr.onreadystatechange=function(){if(xhr.readyState==4){var el=document.getElementById('app-output');if (xhr.status>=200 && xhr.status<300){el.innerText=(xhr.response+\"\\n----------\\n\"+el.innerText);}else{el.innerText=(\"ERROR ON LAST REQUEST\\n----------\\n\"+el.innerText);}}};xhr.responseType='text';xhr.open(\"GET\", uri, true);xhr.send();}</script>");
+    server.sendContent("<script>\nfunction out(t) {var el=document.getElementById('app-output');el.innerText=(t+\"\\n----------\\n\"+el.innerText);};\nfunction get(uri,cb) {var xhr=new XMLHttpRequest();xhr.onreadystatechange=function(){if(xhr.readyState==4){if (xhr.status>=200 && xhr.status<300){cb(xhr.response+\"\\n\");}else{cb(\"ERROR ON LAST REQUEST\\n\");}}};xhr.responseType='text';xhr.timeout=1000;xhr.open(\"GET\", uri, true);xhr.send();}\nfunction wifiP(t) { var text = t.substring(0, 18);if (text == \"WiFi scan started,\" || text == \"...scanning WiFi..\" || text == \"ERROR ON LAST REQU\") { out('WiFi scanner in progress...'); window.setTimeout(function(){get('/wifiscanresult', wifiP);},1000);}else{out(t);}};\n</script>");
     yield();
     server.sendContent("</head><body><p>Toolbox for ESP8266 and ESP32 microcontrollers.</p>");
     yield();
@@ -180,11 +236,13 @@ void handleDefault() {
     }
     server.sendContent("<p>Available items:</p>");
     yield();
-    server.sendContent("<p>Pin # (default 2):<input type=\"text\" id=\"app-pin\" value=\"2\"> <a href=\"#\" onclick=\"get('/blink?pin=' + document.getElementById('app-pin').value);\">Blink this pin (stops last pin blinking)</a></p>");
+    server.sendContent("<p>Pin # (default 2):<input type=\"text\" id=\"app-pin\" value=\"2\"> <a href=\"#\" onclick=\"get('/blink?pin=' + document.getElementById('app-pin').value, out);\">Blink this pin (stops last pin blinking)</a></p>");
     yield();
-    server.sendContent("<p><a href=\"#\" onclick=\"get('/blinkoff');\">Stops last pin blinking</a></p>");
+    server.sendContent("<p><a href=\"#\" onclick=\"get('/blinkoff', out);\">Stops last pin blinking</a></p>");
     yield();
-    server.sendContent("<p>sda pin # (default 4):<input type=\"text\" id=\"app-sda\" value=\"4\"><br>scl pin # (default 5):<input type=\"text\" id=\"app-scl\" value=\"5\"><br><a href=\"#\" onclick=\"get('/i2cscan?sda=' + document.getElementById('app-sda').value + '&scl=' + document.getElementById('app-scl').value);\">Perform I2C scan on selected sda and scl pins</a></p>");
+    server.sendContent("<p>sda pin # (default 4):<input type=\"text\" id=\"app-sda\" value=\"4\"><br>scl pin # (default 5):<input type=\"text\" id=\"app-scl\" value=\"5\"><br><a href=\"#\" onclick=\"get('/i2cscan?sda=' + document.getElementById('app-sda').value + '&scl=' + document.getElementById('app-scl').value, out);\">Perform I2C scan on selected sda and scl pins</a></p>");
+    yield();
+    server.sendContent("<p><a href=\"#\" onclick=\"get('/wifiscan', wifiP);\">Scan WiFis</a></p>");
     yield();
     server.sendContent("<p><a href=\"/config\">Configuration</a></p>");
     yield();
@@ -223,6 +281,10 @@ void setup_web() {
     server.on("/blink", HTTP_GET, handleBlink);
     server.on("/blinkoff", HTTP_GET, handleBlinkoff);
     server.on("/i2cscan", HTTP_GET, handleI2cscan);
+
+    server.on("/wifiscan", HTTP_GET, handleWifiScan);
+    server.on("/wifiscanresult", HTTP_GET, handleWifiScanResult);
+
     server.onNotFound(handleDefault);
     yield();
     server.begin();
@@ -331,6 +393,10 @@ void loop() {
         digitalWrite(blinkPin, blink_status);
     }
 
+    if (scanStart) {
+        scanStart = false;
+        doWifiScan();
+    }
 
     server.handleClient();
     yield();

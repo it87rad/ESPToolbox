@@ -5,6 +5,7 @@ This is an Arduino sketch created in order to test few items on that microcontro
 Current utilities:
  - Blink any pin
  - I2C scanner on any pins
+ - WiFi network scanner (take in mind if your ESP has 5GHz support)
 
 It's configurable, you can use it as an AP or connected to your home Wireless
 
