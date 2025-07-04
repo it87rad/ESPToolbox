@@ -6,6 +6,7 @@ Current utilities:
  - Blink any pin
  - I2C scanner on any pins
  - WiFi network scanner (take in mind if your ESP has 5GHz support)
+ - I2C RTC get data and Clear flags + set data
 
 It's configurable, you can use it as an AP or connected to your home Wireless
 
@@ -18,6 +19,7 @@ You can compile the sketch using Arduino IDE with ESP8266 or ESP32 support.
 This sketch depends on following libreries:
  - uEspConfigLib by Naguissa - Available on Library Manager. It will pull uEEPROMLib as dependency
  - uTimerLib by Naguissa - Available on Library Manager
+ - uRTCLib by Naguissa - Available on Library Manager
  - Wire - Available on ESP Arduino core
 
 

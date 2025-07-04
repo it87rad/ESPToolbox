@@ -4,6 +4,7 @@
 #include "uEspConfigLibFSLittlefs.h"
 #include "uTimerLib.h"
 #include <Wire.h>
+#include "uRTCLib.h"
 
 // ==================== start of TUNEABLE PARAMETERS ====================
 
@@ -39,8 +40,9 @@ volatile bool scanning = false;
     ESP8266HTTPUpdateServer httpUpdater;
 #endif
 
-
 WiFiClient espClient;
+
+uRTCLib rtc;
 
 
 // =======================================================
@@ -58,6 +60,8 @@ void handleI2cscan();
 void handleWifiScan();
 void handleWifiScanResult();
 void handleWifiScanResult();
+void handleRTCSet();
+void handleRTCGet();
 
 void setup_web(void);
 void setup_wifi();
@@ -218,6 +222,105 @@ void handleI2cscan() {
 }
 
 
+// ==================== RTC ====================
+
+void handleRTCSet() {
+    bool errorCall = true;
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.send(200, "text", "");
+    yield();
+
+    if (server.hasArg("sda") && server.hasArg("scl") && server.hasArg("dy") && server.hasArg("dm") && server.hasArg("dd") && server.hasArg("dw") && server.hasArg("th") && server.hasArg("tm") && server.hasArg("ts") && server.hasArg("ad")) {
+        if (server.arg("sda") != "" && server.arg("scl") != "" && server.arg("dy") != "" && server.arg("dm") != "" && server.arg("dd") != "" && server.arg("dw") != "" && server.arg("th") != "" && server.arg("tm") != "" && server.arg("ts") != "" && server.arg("ad") != "") {
+            errorCall = false;
+            blinkPin = -1;
+            blinking = false;
+            server.sendContent("Blink stopped.\n");
+            server.sendContent("RTC - Claring flags and setting date and time.\n");
+            Wire.begin(atoi(server.arg("sda").c_str()), atoi(server.arg("scl").c_str()));
+            rtc.set_rtc_address(strtol(server.arg("ad").c_str(), NULL, 0));
+            rtc.set_model(server.arg("md") == "1" ? URTCLIB_MODEL_DS1307 : URTCLIB_MODEL_DS3231);
+            rtc.refresh();
+            rtc.set_12hour_mode(false);
+            server.sendContent(" - 24h mode set.\n");
+            rtc.lostPowerClear();
+            server.sendContent(" - LostPower flag cleared.\n");
+            rtc.enableBattery();
+            server.sendContent(" - Battery enabled.\n");
+            rtc.set(atoi(server.arg("ts").c_str()), atoi(server.arg("tm").c_str()), atoi(server.arg("th").c_str()), atoi(server.arg("dw").c_str()), atoi(server.arg("dd").c_str()), atoi(server.arg("dm").c_str()), atoi(server.arg("dy").c_str()));
+            server.sendContent(" - RTC set.\n");
+        }
+    }
+    if (errorCall) {
+        server.sendContent("ERROR: needed parameters not specified\n");
+    }
+}
+
+
+void handleRTCGet() {
+    bool errorCall = true;
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.send(200, "text", "");
+    yield();
+
+    if (server.hasArg("sda") && server.hasArg("scl") && server.hasArg("ad")) {
+        if (server.arg("sda") != "" && server.arg("scl") != "" && server.arg("ad") != "") {
+            errorCall = false;
+            blinkPin = -1;
+            blinking = false;
+            server.sendContent("Blink stopped.\n");
+            Wire.begin(atoi(server.arg("sda").c_str()), atoi(server.arg("scl").c_str()));
+            rtc.set_rtc_address(strtol(server.arg("ad").c_str(), NULL, 0));
+            rtc.set_model(server.arg("md") == "1" ? URTCLIB_MODEL_DS1307 : URTCLIB_MODEL_DS3231);
+            rtc.refresh();
+
+            // We use global object, refreshed each second in loop function: rtc.refresh();
+            server.sendContent("RTC data:\n - Date (y/m/d): " + String(rtc.year(), DEC) + "/" + String(rtc.month(), DEC) + "/" + String(rtc.day(), DEC) + "\n");
+            yield();
+
+            server.sendContent(" - Time (h:m:s): " + String(rtc.hour(), DEC) + ":" + String(rtc.minute(), DEC) + ":" + String(rtc.second(), DEC) + "\n");
+            yield();
+
+            server.sendContent(" - DayOfWeeK (1=Sunday): " + String(rtc.dayOfWeek(), DEC) + "\n");
+            yield();
+
+            server.sendContent(" - Mode: " + String(rtc.hourModeAndAmPm() == 0 ? "24h" : "12h"));
+            if (rtc.hourModeAndAmPm() == 1) {
+                server.sendContent(" (am)");
+            }
+            if (rtc.hourModeAndAmPm() == 2) {
+                server.sendContent(" (pm)");
+            }
+            server.sendContent("\n");
+            yield();
+
+            server.sendContent(" - Temperature: " + String(((float) rtc.temp() / 100), 2) + "\n");
+            yield();
+
+            if (rtc.getEOSCFlag()) {
+                server.sendContent(" - Oscillator will not use VBAT when VCC cuts off. Time will not increment without VCC!\n");
+            } else {
+                server.sendContent(" - Oscillator will use VBAT when VCC cuts off.\n");
+            }
+            yield();
+
+            if (rtc.lostPower()) {
+                server.sendContent(" - Lost power status: POWER FAILED.\n");
+            } else {
+                server.sendContent(" - Lost power status: POWER OK.\n");
+            }
+            yield();
+
+            server.sendContent(" - Aging register value: " + String(rtc.agingGet(), DEC) + "\n");
+            yield();
+        }
+    }
+    if (errorCall) {
+        server.sendContent("ERROR: sda, scl and/or address not specified\n");
+    }
+}
+
+
 
 // ==================== ESP web and update ====================
 void handleDefault() {
@@ -228,27 +331,34 @@ void handleDefault() {
     yield();
     server.sendContent("<script>\nfunction out(t) {var el=document.getElementById('app-output');el.innerText=(t+\"\\n----------\\n\"+el.innerText);};\nfunction get(uri,cb) {var xhr=new XMLHttpRequest();xhr.onreadystatechange=function(){if(xhr.readyState==4){if (xhr.status>=200 && xhr.status<300){cb(xhr.response+\"\\n\");}else{cb(\"ERROR ON LAST REQUEST\\n\");}}};xhr.responseType='text';xhr.timeout=1000;xhr.open(\"GET\", uri, true);xhr.send();}\nfunction wifiP(t) { var text = t.substring(0, 18);if (text == \"WiFi scan started,\" || text == \"...scanning WiFi..\" || text == \"ERROR ON LAST REQU\") { out('WiFi scanner in progress...'); window.setTimeout(function(){get('/wifiscanresult', wifiP);},1000);}else{out(t);}};\n</script>");
     yield();
-    server.sendContent("</head><body><p>Toolbox for ESP8266 and ESP32 microcontrollers.</p>");
+    server.sendContent("</head><body><h2>Toolbox for ESP8266 and ESP32 microcontrollers.</h2>");
     yield();
     if (doReset == 1 && server.hasArg("saved") && server.arg("saved") == "1") {
         server.sendContent("<p><b>Configuration saved, resetting device</b></p>");
         doReset = 2;    
     }
-    server.sendContent("<p>Available items:</p>");
+    server.sendContent("<br><a href=\"#\" onclick=\"get('/wifiscan', wifiP);\">Scan WiFis</a><br><hr>");
     yield();
-    server.sendContent("<p>Pin # (default 2):<input type=\"text\" id=\"app-pin\" value=\"2\"> <a href=\"#\" onclick=\"get('/blink?pin=' + document.getElementById('app-pin').value, out);\">Blink this pin (stops last pin blinking)</a></p>");
+    server.sendContent("Pin (default 2): <input type=\"number\" id=\"app-pin\" value=\"2\"> <a href=\"#\" onclick=\"get('/blink?pin=' + document.getElementById('app-pin').value, out);\">Blink this pin (stops last pin blinking)</a> - <a href=\"#\" onclick=\"get('/blinkoff', out);\">Stop pin blinking</a><br><hr>");
     yield();
-    server.sendContent("<p><a href=\"#\" onclick=\"get('/blinkoff', out);\">Stops last pin blinking</a></p>");
+    server.sendContent("sda pin (default 4): <input type=\"number\" id=\"app-sda\" value=\"4\"> | scl pin (default 5): <input type=\"number\" id=\"app-scl\" value=\"5\"> <a href=\"#\" onclick=\"get('/i2cscan?sda=' + document.getElementById('app-sda').value + '&scl=' + document.getElementById('app-scl').value, out);\">Perform I2C scan</a><br><hr>");
     yield();
-    server.sendContent("<p>sda pin # (default 4):<input type=\"text\" id=\"app-sda\" value=\"4\"><br>scl pin # (default 5):<input type=\"text\" id=\"app-scl\" value=\"5\"><br><a href=\"#\" onclick=\"get('/i2cscan?sda=' + document.getElementById('app-sda').value + '&scl=' + document.getElementById('app-scl').value, out);\">Perform I2C scan on selected sda and scl pins</a></p>");
+
+    server.sendContent("<p><b>RTC</b><br>");
     yield();
-    server.sendContent("<p><a href=\"#\" onclick=\"get('/wifiscan', wifiP);\">Scan WiFis</a></p>");
+    server.sendContent("sda pin (default 4): <input type=\"number\" id=\"app-sdar\" value=\"4\"> | scl pin (default 5): <input type=\"number\" id=\"app-sclr\" value=\"5\"><br>");
     yield();
-    server.sendContent("<p><a href=\"/config\">Configuration</a></p>");
+    server.sendContent("Day: <input type=\"number\" id=\"app-dayr\"> | Month: <input type=\"number\" id=\"app-monthr\"> | Year (2 digits): <input type=\"number\" id=\"app-yearr\"> | DayOfWeek (0-Sunday, 6-Saturday): <input type=\"number\" id=\"app-dowr\"><br>");
     yield();
-    server.sendContent("<p><a href=\"/update\">Update</a></p>");
+    server.sendContent("Hour: <input type=\"number\" id=\"app-hourr\"> | Minute: <input type=\"number\" id=\"app-minuter\"> | Second: <input type=\"number\" id=\"app-secondr\"><br>");
+    yield();
+    server.sendContent("RTC is DS1307? Write 1 here: <input type=\"number\" id=\"app-modelr\"> | RTC I2C address (default 0x68): <input type=\"text\" id=\"app-addrr\" value=\"0x68\"><br>");
+    yield();
+    server.sendContent("<a href=\"#\" onclick=\"get('/rtcget?sda=' + document.getElementById('app-sdar').value + '&scl=' + document.getElementById('app-sclr').value + '&ad=' + document.getElementById('app-addrr').value + '&md=' + document.getElementById('app-modelr').value, out);\">GetRTC data</a> - <a href=\"#\" onclick=\"get('/rtcset?sda=' + document.getElementById('app-sdar').value + '&scl=' + document.getElementById('app-sclr').value + '&dy=' + document.getElementById('app-yearr').value + '&dm=' + document.getElementById('app-monthr').value + '&dd=' + document.getElementById('app-dayr').value + '&dw=' + document.getElementById('app-dowr').value + '&th=' + document.getElementById('app-hourr').value + '&tm=' + document.getElementById('app-minuter').value + '&ts=' + document.getElementById('app-secondr').value + '&ad=' + document.getElementById('app-addrr').value + '&md=' + document.getElementById('app-modelr').value, out);\">Clear flags and set</a><br><hr>");
+    yield();
+    server.sendContent("<p><a href=\"/config\">Configuration</a> - <a href=\"/update\">Upload update</a></p><hr>");
     yield();\
-    server.sendContent("Output:<br><pre id=\"app-output\" style=\"border:1px solid #666\"></pre><br><br><br>");
+    server.sendContent("<p>Output:</p><pre id=\"app-output\" style=\"border:1px solid #666\"></pre><br><br><br>");
     yield();\
     server.sendContent("<p><b>Important note:</b> All input pins MUST be numeric. Dx, GPIOx are NOT allowed.");
     yield();\
@@ -284,6 +394,9 @@ void setup_web() {
 
     server.on("/wifiscan", HTTP_GET, handleWifiScan);
     server.on("/wifiscanresult", HTTP_GET, handleWifiScanResult);
+
+    server.on("/rtcget", HTTP_GET, handleRTCGet);
+    server.on("/rtcset", HTTP_GET, handleRTCSet);
 
     server.onNotFound(handleDefault);
     yield();
